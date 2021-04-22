@@ -4,6 +4,7 @@
 import ROOT
 import CombineHarvester.CombineTools.plotting as plot
 import argparse
+import math
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -63,6 +64,37 @@ def DrawAxisHists(pads, axis_hists, def_pad=None):
         axis_hists[i].Draw('AXIGSAME')
     if def_pad is not None:
         def_pad.cd()
+
+def ChooseAxisLabels(axis,labels,size=0.04,logx=False):
+  axis.GetXaxis().SetLabelSize(0)
+  axis_min = axis.GetXaxis().GetXmin()
+  axis_max = axis.GetXaxis().GetXmax()
+  b = ROOT.gPad.GetBottomMargin()
+  l = ROOT.gPad.GetLeftMargin()
+  r = 1 -ROOT.gPad.GetRightMargin()
+  print b,l,r
+  for num in labels:
+    latex = ROOT.TLatex()
+    latex.SetTextAngle(0)
+    latex.SetTextColor(ROOT.kBlack)
+    latex.SetTextFont(42)
+    latex.SetTextSize(size)
+    latex.SetTextAlign(21)
+    if not logx:
+      x_shift = ((num - axis_min)*(r - l))/(axis_max - axis_min)
+    else:
+      x_shift = (math.log(num,10) - math.log(axis_min,10))*(r - l)/(math.log(axis_max,10) - math.log(axis_min,10))
+    latex.DrawLatex(l+x_shift, b-0.04, str(num))
+
+
+latex = ROOT.TLatex()
+latex.SetTextAngle(0)
+latex.SetTextColor(ROOT.kBlack)
+latex.SetTextFont(42)
+latex.SetTextSize(0.4)
+latex.SetTextAlign(21)
+latex.DrawLatex(0.5, 0.5, "Hello")
+
 
 ## Boilerplate
 ROOT.PyConfig.IgnoreCommandLineOptions = True
@@ -170,9 +202,10 @@ if args.process == "bb#phi":
 if args.y_title is not None:
     axis[0].GetYaxis().SetTitle(args.y_title)
 axis[0].GetXaxis().SetTitle(args.x_title)
-axis[0].GetXaxis().SetNoExponent()
-axis[0].GetXaxis().SetMoreLogLabels()
-axis[0].GetXaxis().SetLabelOffset(axis[0].GetXaxis().GetLabelOffset()*2)
+axis[0].GetXaxis().SetNdivisions(6)
+#axis[0].GetXaxis().SetNoExponent()
+#axis[0].GetXaxis().SetMoreLogLabels()
+#axis[0].GetXaxis().SetLabelOffset(axis[0].GetXaxis().GetLabelOffset()*2)
 
 if args.logy:
     axis[0].SetMinimum(0.1)  # we'll fix this later
@@ -192,6 +225,8 @@ if args.y_axis_min is not None or args.y_axis_max is not None:
   hobj = plot.GetAxisHist(pads[0])
   if args.y_axis_min is not None: hobj.SetMinimum(float(args.y_axis_min))
   if args.y_axis_max is not None: hobj.SetMaximum(float(args.y_axis_max))
+
+plot.ChooseAxisLabels(pads[0],axis[0],[100,200,300,600,1000,2000],size=0.04,logx=True)
 
 ratio_graph_sets = []
 ratio_graphs = []
@@ -226,6 +261,8 @@ legend.Draw()
 plot.DrawCMSLogo(pads[0], 'CMS', args.cms_sub, 11, 0.045, 0.035, 1.2, '', 0.8)
 plot.DrawTitle(pads[0], args.title_right, 3)
 plot.DrawTitle(pads[0], args.title_left, 1)
+
+
 
 canv.Print('.pdf')
 canv.Print('.png')
