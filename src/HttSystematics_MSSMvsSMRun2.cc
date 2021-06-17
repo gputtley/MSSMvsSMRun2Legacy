@@ -1,4 +1,3 @@
-#include "CombineHarvester/MSSMvsSMRun2Legacy/interface/HttSystematics_MSSMvsSMRun2.h"
 #include "CombineHarvester/CombineTools/interface/Process.h"
 #include "CombineHarvester/CombineTools/interface/Systematics.h"
 #include "CombineHarvester/CombineTools/interface/Utilities.h"
@@ -6,6 +5,7 @@
 #include <vector>
 #include <fstream>
 #include "CombineHarvester/CombineTools/interface/JsonTools.h"
+#include "CombineHarvester/MSSMvsSMRun2Legacy/interface/HttSystematics_MSSMvsSMRun2.h"
 
 using namespace std;
 
@@ -26,6 +26,15 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
   // ##########################################################################
   // Define groups of signal processes
   // ##########################################################################
+
+  std::vector<std::string> signals_lowmass = {
+    "qqX",
+    "ggX",
+    "ggX_t",
+    "ggX_b",
+    "ggX_i",
+   
+  };
 
   std::vector<std::string> signals_ggH = {
       // STXS stage 0
@@ -79,12 +88,12 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
   std::vector<std::string> signals_VHToWW = {
       // STXS stage 0
       "WHWW125", "ZHWW125"};
-  std::vector<std::string> signals = JoinStr({signals_ggH, signals_qqH, signals_VH, {"qqh", "ggh", "qqH"}});
   std::vector<std::string> signals_HWW = JoinStr({signals_ggHToWW, signals_qqHToWW, signals_VHToWW});
 
   std::vector<std::string> mssm_ggH_signals = {"ggH_t", "ggH_b", "ggH_i", "ggh_t", "ggh_b", "ggh_i", "ggA_t", "ggA_b", "ggA_i"};
   std::vector<std::string> mssm_bbH_signals = {"bbA", "bbH", "bbh", "bbH_500", "bbH_1400"};
   std::vector<std::string> mssm_signals = JoinStr({mssm_ggH_signals, mssm_bbH_signals});
+  std::vector<std::string> signals = JoinStr({signals_ggH, signals_qqH, signals_VH, {"qqh", "ggh", "qqH", "ggH"}, signals_lowmass, mssm_signals});
   std::vector<std::string> jetFakes = {"jetFakes"};
   if(sm == true){
     jetFakes = {"jetFakesSM"};
@@ -95,7 +104,6 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
       JoinStr({
               signals,
               signals_HWW,
-              mssm_signals,
               {"ZTT", "TT", "TTT", "TTL", "TTJ", "W", "ZJ", "ZL", "VV", "VVT", "VVL", "VVJ", "ST"}
               });
 
@@ -542,17 +550,17 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
 
    cb.cp()
        .channel({"et", "mt", "tt", "em"})
-       .process({"ggh_i","ggH_i","ggA_i"})
+       .process({"ggh_i","ggH_i","ggA_i","ggX_i"})
        .AddSyst(cb, "Hdamp_ggH_i_REWEIGHT", "shape", SystMap<>::init(1.00));
 
    cb.cp()
        .channel({"et", "mt", "tt", "em"})
-       .process({"ggh_t","ggH_t","ggA_t"})
+       .process({"ggh_t","ggH_t","ggA_t","ggX_t"})
        .AddSyst(cb, "Hdamp_ggH_t_REWEIGHT", "shape", SystMap<>::init(1.00));
 
    cb.cp()
        .channel({"et", "mt", "tt", "em"})
-       .process({"ggh_b","ggH_b","ggA_b"})
+       .process({"ggh_b","ggH_b","ggA_b","ggX_b"})
        .AddSyst(cb, "Hdamp_ggH_b_REWEIGHT", "shape", SystMap<>::init(1.00));
 
   // ##########################################################################
@@ -565,7 +573,7 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
 
   cb.cp()
       .channel({"et", "mt", "tt", "em"})
-      .process(mssm_ggH_signals)
+      .process(JoinStr({mssm_ggH_signals,{"ggX_t", "ggX_b", "ggX_i"}}))
       .AddSyst(cb, "QCDscale_ggH_REWEIGHT", "shape", SystMap<>::init(1.00));
 
 
@@ -1352,10 +1360,10 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
 
 
   // Common component acting on MC
-  std::vector<std::string> tau_es_processes = JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL"}, signals, signals_HWW, mssm_signals});
+  std::vector<std::string> tau_es_processes = JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL"}, signals, signals_HWW});
   std::vector<std::string> tau_es_processes_emb = {"EMB"};
   if (sm){
-      std::vector<std::string> tau_es_processes = JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL"}, signals, signals_HWW, mssm_signals, jetFakes});
+      std::vector<std::string> tau_es_processes = JoinStr({{"ZTT", "TTT", "TTL", "VVT", "VVL"}, signals, signals_HWW, jetFakes});
       std::vector<std::string> tau_es_processes_emb =  JoinStr({{"EMB"}, jetFakes});
   }
   cb.cp()
@@ -1513,11 +1521,11 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
 
   cb.cp()
       .channel({"et", "mt", "tt", "em"})
-      .process(JoinStr({signals, signals_HWW, mssm_signals, {"ZTT", "ZL", "ZJ", "W"}}))
+      .process(JoinStr({signals, signals_HWW, {"ZTT", "ZL", "ZJ", "W"}}))
       .AddSyst(cb, "CMS_htt_boson_scale_met_$ERA", "shape", SystMap<>::init(1.00));
   cb.cp()
       .channel({"et", "mt", "tt", "em"})
-      .process(JoinStr({signals, signals_HWW, mssm_signals, {"ZTT", "ZL", "ZJ", "W"}}))
+      .process(JoinStr({signals, signals_HWW, {"ZTT", "ZL", "ZJ", "W"}}))
       .AddSyst(cb, "CMS_htt_boson_res_met_$ERA", "shape", SystMap<>::init(1.00));
 
   // met uncertainty templates are included from taking 100% variation in the correction
@@ -1860,22 +1868,16 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
   // Uncertainty on branching ratio for HTT at 125 GeV
   cb.cp()
       .channel({"et", "mt", "tt", "em"})
-      .process(signals).process({"qqH"}, false)
+      .process(signals).process(JoinStr({mssm_signals,signals_lowmass}), false)
       .AddSyst(cb, "BR_htt_THU", "lnN", SystMap<>::init(1.017));
   cb.cp()
       .channel({"et", "mt", "tt", "em"})
-      .process(signals).process({"qqH"}, false)
+      .process(signals).process(JoinStr({mssm_signals,signals_lowmass}), false)
       .AddSyst(cb, "BR_htt_PU_mq", "lnN", SystMap<>::init(1.0099));
   cb.cp()
       .channel({"et", "mt", "tt", "em"})
-      .process(signals).process({"qqH"}, false)
+      .process(signals).process(JoinStr({mssm_signals,signals_lowmass}), false)
       .AddSyst(cb, "BR_htt_PU_alphas", "lnN", SystMap<>::init(1.0062));
-
-  // 95 GeV samples BR uncertainties 
-  cb.cp()
-      .channel({"et", "mt", "tt", "em"})
-      .process({"qqH"}, false)
-      .AddSyst(cb, "BR_htt", "lnN", SystMap<>::init(1.0172));
 
   // Uncertainty on branching ratio for HWW at 125 GeV
   cb.cp()
@@ -2025,6 +2027,11 @@ void AddMSSMvsSMRun2Systematics(CombineHarvester &cb, bool jetfakes, bool embedd
      .channel({"et", "mt", "tt", "em"})
      .process({"qqH"})
      .AddSyst(cb, "QCDScale_qqH", "lnN", SystMap<>::init(1.004));
+
+  // for low mass analysis for "model-dependent" results where we assume the SM ratio of ggH and VBF XS there is a theoretical uncertainty on this ratio due to uncertainties on the cross sections
+  cb.cp().process({"qqX"}).AddSyst(cb, "M95_XS_ratio", "lnN", SystMapAsymm<>::init(1.055, 0.959));
+  cb.cp().process({"ggX","ggX_t","ggX_b","ggX_i"}).AddSyst(cb, "M95_XS_ratio", "lnN", SystMapAsymm<>::init(0.996, 1.003));
+
   // ##########################################################################
   // Uncertainty: Embedded events
   // References:
